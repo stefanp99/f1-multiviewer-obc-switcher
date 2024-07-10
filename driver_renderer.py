@@ -44,13 +44,15 @@ def get_drivers():
             catching = info['IntervalToPositionAhead']['Catching']
             position = info['Position']
             stopped = info['Stopped']
+            retired = info['Retired']
             driver = driver_model.Driver(driver_id=driver_id,
                                          position=position,
                                          interval_to_position_ahead=interval_to_position_ahead,
                                          in_pit=in_pit,
                                          pit_out=pit_out,
                                          stopped=stopped,
-                                         catching=catching)
+                                         catching=catching,
+                                         retired=retired)
             drivers.append(driver)
 
         driver_speeds = {}
