@@ -1,77 +1,27 @@
 import driver_renderer
 from collections import defaultdict
-import math
-from dateutil import parser
 
 
-def isDriverLosingTime(driver_last_intervals: set):
-    if len(driver_last_intervals) < 5:
-        return False
-
-    driver_last_intervals_list = list(driver_last_intervals)
-
-    if driver_last_intervals_list[-1] - driver_last_intervals_list[-2] >= 1 \
-            and driver_last_intervals_list[-2] - driver_last_intervals_list[-3] >= 1 and \
-            driver_last_intervals_list[-3] - driver_last_intervals_list[-4] >= 1 and \
-            driver_last_intervals_list[-4] - driver_last_intervals_list[-5] >= 1:
-        return True
+def findCarDataByDriverId(car_datas: list, driver_id):
+    for car_data in car_datas:
+        if car_data.driver_id == driver_id:
+            return car_data
 
 
-def getDistanceCovered(point1, point2):
-    return math.sqrt(
-        (point2['x'] - point1['x']) ** 2 + (point2['y'] - point1['y']) ** 2)
+def isDriverStopped(speed_list: list):
+    return all(speed == 0 for speed in speed_list)
 
 
-def getTimePassed(time1, time2):
-    dt1 = parser.isoparse(time1)
-    dt2 = parser.isoparse(time2)
-
-    time_difference = dt2 - dt1
-
-    time_difference_in_seconds = time_difference.total_seconds()
-    return time_difference_in_seconds
-
-
-def getDriverSpeed(distance, time):
-    if time == 0:
-        return float(0)
-    return ((distance / 1000) / (time / 3600)) / 10
-
-
-def isDriverStopped(last_distances_covered: list):
-    if len(last_distances_covered) < 3:
-        return False
-
-    return all(x == 0 for x in last_distances_covered[-3:])
-
-
-def isDriverSlow(driver_last_speeds: list, rainfall: int):
-    if len(driver_last_speeds) > 3:
-        if rainfall > 0:
-            return all(speed < 70 for speed in driver_last_speeds[-3:]) or 0 < driver_last_speeds[-1] < 30
-        else:
-            return all(speed < 100 for speed in driver_last_speeds[-3:]) or 0 < driver_last_speeds[-1] < 50
-    return False
+def isDriverSlow(speed_list: list, rainfall):
+    return all(speed < 50 for speed in speed_list)
 
 
 driver_last_intervals_dict = defaultdict(set)
-last_drivers_positions_xyz = {}
-driver_last_distances_covered_dict = defaultdict(list)
-driver_speeds_dict = defaultdict(list)
 
-last_timestamp = ''
-time_passed = -1
 while True:
-    drivers, track_status, drivers_positions_xyz, timestamp, session_status, rain = driver_renderer.get_drivers()
+    drivers, track_status, session_status, rain, car_data_list = driver_renderer.get_drivers()
 
     if session_status == 'Started':
-        if last_timestamp:
-            time_passed = getTimePassed(last_timestamp, timestamp)
-
-        last_timestamp = timestamp
-
-        if not last_drivers_positions_xyz:
-            last_drivers_positions_xyz = drivers_positions_xyz
 
         min_position_driver_to_overtake = 100
         id_driver_to_overtake = -1
@@ -90,6 +40,7 @@ while True:
         id_slow_driver = -1
         min_position_slow_driver = 100
         for driver in drivers:
+            driver_car_data = findCarDataByDriverId(car_data_list, driver.driver_id)
 
             if driver.interval_to_position_ahead and driver.interval_to_position_ahead[0] == '+':
                 int_interval = float(driver.interval_to_position_ahead[1:])
@@ -97,56 +48,39 @@ while True:
                 if int_interval < 1:
                     if min_position_driver_to_overtake > int(driver.position):
                         min_position_driver_to_overtake = int(driver.position)
-                        id_driver_to_overtake = driver.driverId
+                        id_driver_to_overtake = driver.driver_id
 
-                driver_last_intervals_dict[driver.driverId].add(int_interval)
-                if len(driver_last_intervals_dict[driver.driverId]) > 10:
-                    elements_list = list(driver_last_intervals_dict[driver.driverId])
+                driver_last_intervals_dict[driver.driver_id].add(int_interval)
+                if len(driver_last_intervals_dict[driver.driver_id]) > 10:
+                    elements_list = list(driver_last_intervals_dict[driver.driver_id])
                     elements_list.pop(0)
-                    driver_last_intervals_dict[driver.driverId] = set(elements_list)
+                    driver_last_intervals_dict[driver.driver_id] = set(elements_list)
 
             if driver.in_pit:
                 if min_position_driver_in_pit > int(driver.position):
                     min_position_driver_in_pit = int(driver.position)
-                    id_driver_in_pit = int(driver.driverId)
+                    id_driver_in_pit = int(driver.driver_id)
 
             if driver.pit_out:
                 if min_position_driver_pit_out > int(driver.position):
                     min_position_driver_pit_out = int(driver.position)
-                    id_driver_pit_out = int(driver.driverId)
-
-            # if isDriverLosingTime(driver_last_intervals_dict[driver.driverId]) and not driver.in_pit and not driver.pit_out:
-            #     print(f"!!!DRIVER {driver.driverId} is losing a lot of time!!!")
-
-            driver_distance_covered = getDistanceCovered(last_drivers_positions_xyz[driver.driverId],
-                                                         drivers_positions_xyz[driver.driverId])
-            driver_last_distances_covered_dict[driver.driverId].append(driver_distance_covered)
-            if len(driver_last_distances_covered_dict[driver.driverId]) >= 10:
-                driver_last_distances_covered_dict[driver.driverId].pop(0)
+                    id_driver_pit_out = int(driver.driver_id)
 
             if track_status <= 2:
-                if isDriverStopped(driver_last_distances_covered_dict[driver.driverId]) and not driver.stopped and not driver.in_pit \
+                if isDriverStopped(driver_car_data.speed_list) and not driver.stopped and not driver.in_pit \
                         and not driver.pit_out:  # and not yet changed in the api to stopped and not in pit
                     stopped_drivers += 1
-                    id_stopped_driver = int(driver.driverId)
+                    id_stopped_driver = int(driver.driver_id)
                     if min_position_stopped_driver > int(driver.position):
                         min_position_stopped_driver = int(driver.position)
-                        id_stopped_driver = driver.driverId
+                        id_stopped_driver = driver.driver_id
 
-                if time_passed != -1:
-                    driver_speed = float(getDriverSpeed(driver_distance_covered, time_passed))
-                    driver_speeds_dict[driver.driverId].append(driver_speed)
-                    if len(driver_speeds_dict[driver.driverId]) >= 10:
-                        driver_speeds_dict[driver.driverId].pop(0)
-
-                if isDriverSlow(driver_speeds_dict[driver.driverId], rain) and not driver.stopped and not driver.in_pit and not driver.pit_out:
-                    id_slow_driver = int(driver.driverId)
+                if isDriverSlow(driver_car_data.speed_list, rain) and not driver.stopped and not driver.in_pit and not driver.pit_out:
+                    id_slow_driver = int(driver.driver_id)
                     slow_drivers += 1
                     if min_position_slow_driver > int(driver.position):
                         min_position_slow_driver = int(driver.position)
-                        id_slow_driver = driver.driverId
-
-        last_drivers_positions_xyz = drivers_positions_xyz
+                        id_slow_driver = driver.driver_id
 
         if id_driver_to_overtake != -1:
             print(f'driver to overtake: {str(id_driver_to_overtake)}')
