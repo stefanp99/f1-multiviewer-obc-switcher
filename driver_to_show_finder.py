@@ -24,7 +24,7 @@ def isDriverSlow(speed_list: list, rainfall):
 
 def isDriverOvertaking(interval: float, drs):
     if interval <= config.THRESHOLD_OVERTAKE_FOR_INTERVAL_WITH_DRS:
-        if drs == 8:  # drs detected, eligible in activation zone
+        if drs in [8, 10, 11, 12]:  # drs detected, eligible in activation zone or drs on
             return True
         elif interval <= config.THRESHOLD_OVERTAKE_FOR_INTERVAL_WITHOUT_DRS:
             return True
