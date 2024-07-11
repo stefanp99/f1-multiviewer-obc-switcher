@@ -1,19 +1,12 @@
 import requests
 import driver_model
 import car_data
+import config
 
 
 def get_drivers():
-    url = 'http://localhost:10101/api/graphql'
-    body = '''{
-      f1LiveTimingState {
-        TimingData
-        TrackStatus
-        SessionStatus
-        WeatherData
-        CarData
-      }
-    }'''
+    url = config.BASE_URL
+    body = config.REQUEST_BODY_DRIVER_INFO
 
     response = requests.post(url=url, json={"query": body})
 

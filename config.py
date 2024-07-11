@@ -1,3 +1,64 @@
+BASE_URL = 'http://localhost:10101/api/graphql'
+REQUEST_BODY_DRIVER_INFO = '''{
+      f1LiveTimingState {
+        TimingData
+        TrackStatus
+        SessionStatus
+        WeatherData
+        CarData
+      }
+    }'''
+REQUEST_BODY_PLAYERS = '''{
+  players {
+    id
+    type
+    state {
+      ts
+      paused
+      muted
+      volume
+      live
+      currentTime
+      interpolatedCurrentTime
+    }
+    driverData {
+      driverNumber
+      tla
+      firstName
+      lastName
+      teamName
+    }
+    streamData {
+      contentId
+      meetingKey
+      sessionKey
+      channelId
+      title
+    }
+    bounds {
+      x
+      y
+      width
+      height
+    }
+    fullscreen
+    alwaysOnTop
+    maintainAspectRatio
+    
+  }
+}'''
+REQUEST_BODY_CREATE_PLAYER = '''mutation PlayerCreate($input: PlayerCreateInput!) {
+  playerCreate(input: $input)
+}
+'''
+REQUEST_BODY_PLAYERS_SYNC = '''mutation PlayerSync($playerSyncId: ID!) {
+  playerSync(id: $playerSyncId)
+}'''
+REQUEST_BODY_DELETE_PLAYER = '''mutation PlayerSync($playerDeleteId: ID!) {
+  playerDelete(id: $playerDeleteId)
+}'''
+
+
 THRESHOLD_RAIN_SLOW_DRIVER_SPEED = 50
 THRESHOLD_DRY_SLOW_DRIVER_SPEED = 80
 FREQUENCY_NR_FOR_SLOW_DRIVER = 3

@@ -1,8 +1,34 @@
-import mvf1
-
+import requests
 import driver_to_show_finder
 import config
 import time
+import player_model
+
+
+def buildPlayersList():
+    body = config.REQUEST_BODY_PLAYERS
+    response = requests.post(url=url, json={"query": body})
+
+    players_list = []
+
+    if response.status_code == 200:
+        data = response.json()
+        players_data = data['data']['players']
+
+        for player_data in players_data:
+            p = player_model.Player(
+                player_id=player_data['id'],
+                player_type=player_data['type'],
+                state=player_data['state'],
+                driver_data=player_data.get('driverData'),
+                stream_data=player_data['streamData'],
+                bounds=player_data['bounds'],
+                fullscreen=player_data['fullscreen'],
+                always_on_top=player_data['alwaysOnTop'],
+                maintain_aspect_ratio=player_data['maintainAspectRatio']
+            )
+            players_list.append(p)
+    return players_list
 
 
 def createSortedListOfDriverIdsAndAction():
@@ -71,7 +97,8 @@ def showDriver(shown_driver_id, shown_action):
             shown_action_priority = config.PRIORITIES.index(shown_action)
             new_shown_action_priority = config.PRIORITIES.index(new_shown_action)
 
-            if shown_action_priority >= new_shown_action_priority and (shown_driver_id != new_driver_id or shown_action != new_shown_action):  # new action has higher priority
+            if shown_action_priority >= new_shown_action_priority and (
+                    shown_driver_id != new_driver_id or shown_action != new_shown_action):  # new action has higher priority
                 print('Higher priority action found, switching driver.')
                 shown_driver_id = new_driver_id
                 shown_action = new_shown_action
@@ -91,64 +118,61 @@ def showDriver(shown_driver_id, shown_action):
 
 
 def switchStream(new_driver_id: str):
-    global obc_stream_player
-    if new_driver_id == str(obc_stream_player.driver_data['driverNumber']):
+    global obc_player
+    if new_driver_id == obc_player.driver_data['driverNumber']:
         return
 
-    multi_viewer.player_create(
-        content_id=obc_stream_player.content_id,
-        driver_tla=config.DRIVERS_IDS_TLA_DICT[new_driver_id],
-        driver_number=int(new_driver_id),
-        x=obc_stream_player.x,
-        y=obc_stream_player.y,
-        width=obc_stream_player.width,
-        height=obc_stream_player.height,
-        fullscreen=obc_stream_player.fullscreen,
-        always_on_top=False,
-        maintain_aspect_ratio=obc_stream_player.maintain_aspect_ratio
-    )
+    response_create_player = createPlayer(new_driver_id).json()
 
-    while True:
-        try:
-            multi_viewer.player_sync_to_commentary()  # in case we can't sync due to player not being created yet
-            break
-        except mvf1.mvf1.MultiViewerForF1Error:
-            print('Player not created in time for syncing. Retrying...')
-            continue  # Retry the sync
+    old_obc_player_id = obc_player.player_id
 
-    new_obc_stream_player = multi_viewer.players[-1]  # new obc player is the latest created
+    obc_player.player_id = response_create_player['data']['playerCreate']
 
-    multi_viewer.player_seek_to(new_obc_stream_player.id, absolute=None, relative=config.TIME_RELATIVE_SEEK_BEHIND_AFTER_SWITCH)  # seek behind so that users don't miss action
+    response_player_sync = syncPlayers().json()
 
-    multi_viewer.player_set_driver_header_mode(new_obc_stream_player.id, mode=config.DRIVER_HEADER_MODE)
-
-    old_player_id = obc_stream_player.id
-    obc_stream_player = new_obc_stream_player
-    obc_stream_player.set_always_on_top(always_on_top=True)
-    multi_viewer.player_delete(id=old_player_id)
+    response_delete_player = deletePlayer(old_obc_player_id).json()
 
 
-def findPlayerByDriverId(needed_driver_id: str) -> mvf1.Player:
-    players = multi_viewer.players
-    for p in players:
-        if p.driver_data and p.driver_data['driverNumber'] == int(needed_driver_id):
-            return p
+def createPlayer(new_driver_id):
+    global obc_player
+    new_player_dict = {"alwaysOnTop": obc_player.always_on_top, "bounds": obc_player.bounds,
+                       "contentId": obc_player.stream_data['contentId'], "driverNumber": int(new_driver_id),
+                       "driverTla": config.DRIVERS_IDS_TLA_DICT[new_driver_id],
+                       "fullscreen": obc_player.fullscreen, "maintainAspectRatio": obc_player.maintain_aspect_ratio,
+                       "streamTitle": config.DRIVERS_IDS_TLA_DICT[new_driver_id]}
+
+    obc_player.driver_data['driverNumber'] = new_driver_id
+    obc_player.driver_data['tla'] = config.DRIVERS_IDS_TLA_DICT[new_driver_id]
+
+    variables = {"input": new_player_dict}
+    response = requests.post(url, json={"query": config.REQUEST_BODY_CREATE_PLAYER, "variables": variables})
+    return response
 
 
-multi_viewer = mvf1.MultiViewerForF1()
-open_players = multi_viewer.players
-live_stream_player = mvf1.Player
-obc_stream_player = mvf1.Player
+def syncPlayers():  # Watch out if player is not created in time. Check while True loop in previous commits
+    global additional_player
+    variables = {"playerSyncId": additional_player.player_id}
+    response = requests.post(url, json={"query": config.REQUEST_BODY_PLAYERS_SYNC, "variables": variables})
+    return response
 
-for player in open_players:
-    if player.channel_id in [config.F1_LIVE_CHANNEL_ID, config.INTERNATIONAL_CHANNEL_ID]:
-        live_stream_player = player
-    else:
-        if player.driver_data:
-            obc_stream_player = player
-            obc_stream_player.set_always_on_top(always_on_top=True)
 
-if live_stream_player:
+def deletePlayer(old_obc_player_id):
+    variables = {"playerDeleteId": old_obc_player_id}
+    response = requests.post(url, json={"query": config.REQUEST_BODY_DELETE_PLAYER, "variables": variables})
+    return response
+
+
+url = config.BASE_URL
+players = buildPlayersList()
+additional_player = player_model.Player
+obc_player = player_model.Player
+for player in players:
+    if player.player_type == 'ADDITIONAL':  # F1 LIVE or INTERNATIONAL
+        additional_player = player
+    if player.player_type == 'OBC':
+        obc_player = player
+
+if additional_player and obc_player:
     # Initial call to start the process
     driver_id, action = createSortedListOfDriverIdsAndAction()
     showDriver(driver_id, action)
