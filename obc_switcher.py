@@ -1,6 +1,9 @@
+import mvf1
+
 import driver_to_show_finder
 import config
 import time
+from mvf1 import MultiViewerForF1
 
 
 def createSortedListOfDriverIdsAndAction():
@@ -53,6 +56,7 @@ def showDriver(shown_driver_id, shown_action):
             max_time_to_switch = config.MAX_TIME_SWITCH_PIT_OUT
 
         print(f"{shown_driver_id} - {shown_action} - {min_time_to_switch}s - {max_time_to_switch}s")
+        switchStream(shown_driver_id)
 
         if min_time_to_switch != -1:
             time.sleep(min_time_to_switch)
@@ -85,6 +89,35 @@ def showDriver(shown_driver_id, shown_action):
             shown_action = new_shown_action
 
 
-# Initial call to start the process
-driver_id, action = createSortedListOfDriverIdsAndAction()
-showDriver(driver_id, action)
+def switchStream(new_driver_id: str, old_driver_id: str):
+    global obc_stream_player
+    if new_driver_id == str(obc_stream_player.driver_data['driverNumber']):
+        return
+    obc_stream_player.switch_stream(config.DRIVERS_IDS_TLA_DICT[new_driver_id])  # TODO: first create on same position new stream, assign obc_stream_player to new stream then delete the old stream
+    obc_stream_player = findPlayerByDriverId(new_driver_id)
+    multi_viewer.player_sync_to_commentary()
+
+
+def findPlayerByDriverId(needed_driver_id: str) -> mvf1.Player:
+    players = multi_viewer.players
+    for p in players:
+        if p.driver_data and p.driver_data['driverNumber'] == int(needed_driver_id):
+            return p
+
+
+multi_viewer = MultiViewerForF1()
+open_players = multi_viewer.players
+live_stream_player = mvf1.Player
+obc_stream_player = mvf1.Player
+
+for player in open_players:
+    if player.channel_id in [config.F1_LIVE_CHANNEL_ID, config.INTERNATIONAL_CHANNEL_ID]:
+        live_stream_player = player
+    else:
+        if player.driver_data:
+            obc_stream_player = player
+
+if live_stream_player:
+    # Initial call to start the process
+    driver_id, action = createSortedListOfDriverIdsAndAction()
+    showDriver(driver_id, action)
