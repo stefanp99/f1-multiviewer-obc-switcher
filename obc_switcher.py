@@ -3,7 +3,6 @@ import mvf1
 import driver_to_show_finder
 import config
 import time
-from mvf1 import MultiViewerForF1
 
 
 def createSortedListOfDriverIdsAndAction():
@@ -85,17 +84,37 @@ def showDriver(shown_driver_id, shown_action):
             # Max time reached, switch to next available action regardless of priority
             print('Max time to switch reached, changing to another action.')
             new_driver_id, new_shown_action = createSortedListOfDriverIdsAndAction()
+            while new_driver_id == shown_driver_id:
+                new_driver_id, new_shown_action = createSortedListOfDriverIdsAndAction()
             shown_driver_id = new_driver_id
             shown_action = new_shown_action
 
 
-def switchStream(new_driver_id: str, old_driver_id: str):
+def switchStream(new_driver_id: str):
     global obc_stream_player
     if new_driver_id == str(obc_stream_player.driver_data['driverNumber']):
         return
-    obc_stream_player.switch_stream(config.DRIVERS_IDS_TLA_DICT[new_driver_id])  # TODO: first create on same position new stream, assign obc_stream_player to new stream then delete the old stream
-    obc_stream_player = findPlayerByDriverId(new_driver_id)
+
+    multi_viewer.player_create(
+        content_id=obc_stream_player.content_id,
+        driver_tla=config.DRIVERS_IDS_TLA_DICT[new_driver_id],
+        driver_number=int(new_driver_id),
+        x=obc_stream_player.x,
+        y=obc_stream_player.y,
+        width=obc_stream_player.width,
+        height=obc_stream_player.height,
+        fullscreen=obc_stream_player.fullscreen,
+        always_on_top=False,
+        maintain_aspect_ratio=obc_stream_player.maintain_aspect_ratio
+    )
+
     multi_viewer.player_sync_to_commentary()
+    new_obc_stream_player = multi_viewer.players[-1]  # new obc player is the latest created
+
+    old_player_id = obc_stream_player.id
+    obc_stream_player = new_obc_stream_player
+    obc_stream_player.set_always_on_top(always_on_top=True)
+    multi_viewer.player_delete(id=old_player_id)
 
 
 def findPlayerByDriverId(needed_driver_id: str) -> mvf1.Player:
@@ -105,7 +124,7 @@ def findPlayerByDriverId(needed_driver_id: str) -> mvf1.Player:
             return p
 
 
-multi_viewer = MultiViewerForF1()
+multi_viewer = mvf1.MultiViewerForF1()
 open_players = multi_viewer.players
 live_stream_player = mvf1.Player
 obc_stream_player = mvf1.Player
@@ -116,6 +135,7 @@ for player in open_players:
     else:
         if player.driver_data:
             obc_stream_player = player
+            obc_stream_player.set_always_on_top(always_on_top=True)
 
 if live_stream_player:
     # Initial call to start the process

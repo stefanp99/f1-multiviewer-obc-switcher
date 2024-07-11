@@ -16,6 +16,6 @@ MAX_TIME_SWITCH_SLOW = 25
 PRIORITIES = ["stopped", "slow", "overtake", "in_pit", "pit_out"]
 F1_LIVE_CHANNEL_ID = 1033
 INTERNATIONAL_CHANNEL_ID = 1025
-DRIVERS_IDS_TLA_DICT = {"1": "VER", "11": "PER", "44": "HAM", "63": "RUS", "16": "LEC", "55": "SAI", "4": "NOR", "81": "PIA",
-                        "14": "ALO", "18": "STR", "31": "OCO", "10": "GAS", "23": "ALB", "2": "SAR", "3": "RIC", "22": "TSU",
-                        "77": "BOT", "24": "ZHO", "20": "MAG", "27": "HUL"}
+DRIVERS_IDS_TLA_DICT = {"1": "VER", "11": "PER", "44": "HAM", "63": "RUS", "16": "LEC", "55": "SAI", "4": "NOR",
+                        "81": "PIA", "14": "ALO", "18": "STR", "31": "OCO", "10": "GAS", "23": "ALB", "2": "SAR", "3": "RIC",
+                        "22": "TSU", "77": "BOT", "24": "ZHO", "20": "MAG", "27": "HUL"}

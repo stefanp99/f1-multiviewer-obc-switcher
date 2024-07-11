@@ -76,12 +76,12 @@ def getDriverIdsToShow():
                 if driver.in_pit:
                     if min_position_driver_in_pit > int(driver.position):
                         min_position_driver_in_pit = int(driver.position)
-                        id_driver_in_pit = int(driver.driver_id)
+                        id_driver_in_pit = driver.driver_id
 
                 if driver.pit_out:
                     if min_position_driver_pit_out > int(driver.position):
                         min_position_driver_pit_out = int(driver.position)
-                        id_driver_pit_out = int(driver.driver_id)
+                        id_driver_pit_out = driver.driver_id
 
                 if track_status <= 3:  # meaning green, yellow, double yellow flag
                     if isDriverStopped(driver_car_data.speed_list) and not driver.stopped and not driver.in_pit \
