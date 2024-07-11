@@ -54,8 +54,14 @@ REQUEST_BODY_CREATE_PLAYER = '''mutation PlayerCreate($input: PlayerCreateInput!
 REQUEST_BODY_PLAYERS_SYNC = '''mutation PlayerSync($playerSyncId: ID!) {
   playerSync(id: $playerSyncId)
 }'''
-REQUEST_BODY_DELETE_PLAYER = '''mutation PlayerSync($playerDeleteId: ID!) {
+REQUEST_BODY_DELETE_PLAYER = '''mutation PlayerDelete($playerDeleteId: ID!) {
   playerDelete(id: $playerDeleteId)
+}'''
+REQUEST_BODY_ALWAYS_ON_TOP = '''mutation PlayerSetAlwaysOnTop($playerSetAlwaysOnTopId: ID!, $alwaysOnTop: Boolean) {
+  playerSetAlwaysOnTop(id: $playerSetAlwaysOnTopId, alwaysOnTop: $alwaysOnTop)
+}'''
+REQUEST_BODY_DRIVER_HEADER_MODE = '''mutation PlayerSetDriverHeaderMode($playerSetDriverHeaderModeId: ID!, $mode: DriverHeaderMode!) {
+  playerSetDriverHeaderMode(id: $playerSetDriverHeaderModeId, mode: $mode)
 }'''
 
 

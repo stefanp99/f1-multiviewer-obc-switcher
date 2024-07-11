@@ -128,14 +128,27 @@ def switchStream(new_driver_id: str):
 
     obc_player.player_id = response_create_player['data']['playerCreate']
 
-    response_player_sync = syncPlayers().json()
+    player_sync_ok = bool(syncPlayers().json()['data']['playerSync'])
+    if not player_sync_ok:
+        print('Not synced correctly')
 
-    response_delete_player = deletePlayer(old_obc_player_id).json()
+    if config.DRIVER_HEADER_MODE != 'OBC_LIVE_TIMING':
+        set_driver_header_mode_ok = bool(setDriverHeaderMode(obc_player.player_id, config.DRIVER_HEADER_MODE).json()['data']['playerSetDriverHeaderMode'])
+        if not set_driver_header_mode_ok:
+            print('Not set driver header mode correctly')
+
+    set_always_on_top_ok = bool(setAlwaysOnTop(obc_player.player_id, True).json()['data']['playerSetAlwaysOnTop'])
+    if not set_always_on_top_ok:
+        print('Not set on top correctly')
+
+    delete_player_ok = bool(deletePlayer(old_obc_player_id).json()['data']['playerDelete'])
+    if not delete_player_ok:
+        print('Not deleted correctly')
 
 
 def createPlayer(new_driver_id):
     global obc_player
-    new_player_dict = {"alwaysOnTop": obc_player.always_on_top, "bounds": obc_player.bounds,
+    new_player_dict = {"alwaysOnTop": False, "bounds": obc_player.bounds,
                        "contentId": obc_player.stream_data['contentId'], "driverNumber": int(new_driver_id),
                        "driverTla": config.DRIVERS_IDS_TLA_DICT[new_driver_id],
                        "fullscreen": obc_player.fullscreen, "maintainAspectRatio": obc_player.maintain_aspect_ratio,
@@ -162,6 +175,18 @@ def deletePlayer(old_obc_player_id):
     return response
 
 
+def setAlwaysOnTop(player_id, always_on_top: bool):
+    variables = {"playerSetAlwaysOnTopId": str(player_id), "alwaysOnTop": always_on_top}
+    response = requests.post(url, json={"query": config.REQUEST_BODY_ALWAYS_ON_TOP, "variables": variables})
+    return response
+
+
+def setDriverHeaderMode(player_id, header_mode):
+    variables = {"playerSetDriverHeaderModeId": str(player_id), "mode": header_mode}
+    response = requests.post(url, json={"query": config.REQUEST_BODY_DRIVER_HEADER_MODE, "variables": variables})
+    return response
+
+
 url = config.BASE_URL
 players = buildPlayersList()
 additional_player = player_model.Player
@@ -171,6 +196,7 @@ for player in players:
         additional_player = player
     if player.player_type == 'OBC':
         obc_player = player
+        obc_player.always_on_top = True
 
 if additional_player and obc_player:
     # Initial call to start the process
