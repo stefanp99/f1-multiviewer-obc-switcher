@@ -108,7 +108,14 @@ def switchStream(new_driver_id: str):
         maintain_aspect_ratio=obc_stream_player.maintain_aspect_ratio
     )
 
-    multi_viewer.player_sync_to_commentary()
+    while True:
+        try:
+            multi_viewer.player_sync_to_commentary()  # in case we can't sync due to player not being created yet
+            break
+        except mvf1.mvf1.MultiViewerForF1Error:
+            print('Player not created in time for syncing. Retrying...')
+            continue  # Retry the sync
+
     new_obc_stream_player = multi_viewer.players[-1]  # new obc player is the latest created
 
     old_player_id = obc_stream_player.id
