@@ -4,9 +4,9 @@ FREQUENCY_NR_FOR_SLOW_DRIVER = 3
 THRESHOLD_OVERTAKE_FOR_INTERVAL_WITH_DRS = 0.6
 THRESHOLD_OVERTAKE_FOR_INTERVAL_WITHOUT_DRS = 0.3
 MIN_TIME_SWITCH_OVERTAKE = 10  # minimum period of time after which we can change the camera to a higher priority action
-MAX_TIME_SWITCH_OVERTAKE = 25  # maximum period of time after which we must change the camera to any action
-MIN_TIME_SWITCH_IN_PIT = 5
-MAX_TIME_SWITCH_IN_PIT = 25
+MAX_TIME_SWITCH_OVERTAKE = 20  # maximum period of time after which we must change the camera to any action
+MIN_TIME_SWITCH_IN_PIT = 10
+MAX_TIME_SWITCH_IN_PIT = 20
 MIN_TIME_SWITCH_PIT_OUT = 5
 MAX_TIME_SWITCH_PIT_OUT = 15
 MIN_TIME_SWITCH_STOPPED = 5
@@ -19,3 +19,5 @@ INTERNATIONAL_CHANNEL_ID = 1025
 DRIVERS_IDS_TLA_DICT = {"1": "VER", "11": "PER", "44": "HAM", "63": "RUS", "16": "LEC", "55": "SAI", "4": "NOR",
                         "81": "PIA", "14": "ALO", "18": "STR", "31": "OCO", "10": "GAS", "23": "ALB", "2": "SAR", "3": "RIC",
                         "22": "TSU", "77": "BOT", "24": "ZHO", "20": "MAG", "27": "HUL"}
+TIME_RELATIVE_SEEK_BEHIND_AFTER_SWITCH = -5
+DRIVER_HEADER_MODE = "DRIVER_HEADER"  # can be DRIVER_HEADER, NONE or OBC_LIVE_TIMING

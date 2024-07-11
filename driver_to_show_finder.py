@@ -44,22 +44,21 @@ def findSlowDriversInLastIterations(drivers_ids_list: list):
 def getDriverIdsToShow():
     drivers, track_status, session_status, rain, car_data_list = driver_renderer.get_drivers()
 
+    min_position_driver_to_overtake = 100
+    id_driver_to_overtake = -1
+
+    min_position_driver_in_pit = 100
+    id_driver_in_pit = -1
+
+    min_position_driver_pit_out = 100
+    id_driver_pit_out = -1
+
+    min_position_stopped_driver = 100
+    id_stopped_driver = -1
+
+    min_position_slow_driver = 100
+    id_slow_driver = -1
     if session_status == 'Started':
-
-        min_position_driver_to_overtake = 100
-        id_driver_to_overtake = -1
-
-        min_position_driver_in_pit = 100
-        id_driver_in_pit = -1
-
-        min_position_driver_pit_out = 100
-        id_driver_pit_out = -1
-
-        id_stopped_driver = -1
-        min_position_stopped_driver = 100
-
-        id_slow_driver = -1
-        min_position_slow_driver = 100
         for driver in drivers:
             if not (driver.retired or driver.stopped):
 
@@ -97,4 +96,4 @@ def getDriverIdsToShow():
                             min_position_slow_driver = int(driver.position)
                             id_slow_driver = driver.driver_id
 
-        return id_driver_to_overtake, id_driver_in_pit, id_driver_pit_out, id_stopped_driver, id_slow_driver
+    return id_driver_to_overtake, id_driver_in_pit, id_driver_pit_out, id_stopped_driver, id_slow_driver

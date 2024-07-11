@@ -118,6 +118,10 @@ def switchStream(new_driver_id: str):
 
     new_obc_stream_player = multi_viewer.players[-1]  # new obc player is the latest created
 
+    multi_viewer.player_seek_to(new_obc_stream_player.id, absolute=None, relative=config.TIME_RELATIVE_SEEK_BEHIND_AFTER_SWITCH)  # seek behind so that users don't miss action
+
+    multi_viewer.player_set_driver_header_mode(new_obc_stream_player.id, mode=config.DRIVER_HEADER_MODE)
+
     old_player_id = obc_stream_player.id
     obc_stream_player = new_obc_stream_player
     obc_stream_player.set_always_on_top(always_on_top=True)
