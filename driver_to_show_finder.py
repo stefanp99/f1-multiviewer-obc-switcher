@@ -75,6 +75,12 @@ def getDriverIdsToShow():
                         min_position_driver_pit_out = int(driver.position)
                         id_driver_pit_out = driver.driver_id
 
+                if isDriverStopped(driver_car_data.speed_list) and not driver.stopped and not driver.in_pit and not driver.retired:  # and not yet changed in the api to stopped and not in pit
+                    id_stopped_driver = driver.driver_id
+                    if min_position_stopped_driver > int(driver.position):
+                        min_position_stopped_driver = int(driver.position)
+                        id_stopped_driver = driver.driver_id
+
                 if track_status <= 3:  # meaning green, yellow
                     if driver.interval_to_position_ahead and driver.interval_to_position_ahead[0] == '+':
                         float_interval = float(driver.interval_to_position_ahead[1:])
@@ -84,16 +90,9 @@ def getDriverIdsToShow():
                                 min_position_driver_to_overtake = int(driver.position)
                                 id_driver_to_overtake = driver.driver_id
 
-                    if isDriverStopped(driver_car_data.speed_list) and not driver.stopped and not driver.in_pit \
-                            and not driver.pit_out:  # and not yet changed in the api to stopped and not in pit
-                        id_stopped_driver = int(driver.driver_id)
-                        if min_position_stopped_driver > int(driver.position):
-                            min_position_stopped_driver = int(driver.position)
-                            id_stopped_driver = driver.driver_id
-
                     if isDriverSlow(driver_car_data.speed_list,
                                     rain) and not driver.stopped and not driver.in_pit and not driver.pit_out:
-                        id_slow_driver = int(driver.driver_id)
+                        id_slow_driver = driver.driver_id
                         if min_position_slow_driver > int(driver.position):
                             min_position_slow_driver = int(driver.position)
                             id_slow_driver = driver.driver_id
